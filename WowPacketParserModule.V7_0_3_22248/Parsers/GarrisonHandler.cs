@@ -16,9 +16,9 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
             packet.ReadTime("StartTime", indexes);
             packet.ReadUInt32("TravelDuration", indexes);
             packet.ReadUInt32("MissionDuration", indexes);
-            packet.ReadUInt32("MissionState", indexes);
-            packet.ReadUInt32("Unknown1", indexes);
-            packet.ReadUInt32("Unknown2", indexes);
+            packet.ReadUInt32E<GarrisonMissionState>("MissionState", indexes);
+            packet.ReadUInt32("SuccessChance", indexes);
+            packet.ReadUInt32E<GarrisonMissionFlag>("Flags", indexes);
         }
 
         public static void ReadGarrisonMissionOvermaxRewards(Packet packet, params object[] indexes)
@@ -32,7 +32,7 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
                 packet.ReadUInt32("CurrencyQuantity", indexes, i);
                 packet.ReadUInt32("FollowerXP", indexes, i);
                 packet.ReadUInt32("BonusAbilityID", indexes, i);
-                packet.ReadInt32("Unknown", indexes, i);
+                packet.ReadInt32("ItemFileDataID", indexes, i);
             }
         }
 
@@ -53,7 +53,7 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
         {
             packet.ReadUInt64("DbID", indexes);
             packet.ReadUInt32("GarrFollowerID", indexes);
-            packet.ReadUInt32("Quality", indexes);
+            packet.ReadUInt32E<GarrisonFollowerQuality>("Quality", indexes);
             packet.ReadUInt32("FollowerLevel", indexes);
             packet.ReadUInt32("ItemLevelWeapon", indexes);
             packet.ReadUInt32("ItemLevelArmor", indexes);
@@ -63,7 +63,7 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
             packet.ReadUInt32("CurrentMissionID", indexes);
             var abilityCount = packet.ReadInt32("AbilityCount", indexes);
             packet.ReadInt32("ZoneSupportSpellID", indexes);
-            packet.ReadInt32("FollowerStatus", indexes);
+            packet.ReadInt32E<GarrisonFollowerStatus>("FollowerStatus", indexes);
 
             for (int i = 0; i < abilityCount; i++)
                 packet.ReadInt32("AbilityID", indexes, i);
@@ -85,6 +85,33 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
         {
             packet.ReadInt32("GarrFollowerTypeID", indexes);
             packet.ReadUInt32("Count", indexes);
+        }
+
+        public static void ReadGarrisonShipment(Packet packet, params object[] indexes)
+        {
+            packet.ReadInt32("ShipmentRecId", indexes);
+            packet.ReadInt64("ShipmentId", indexes);
+            packet.ReadInt64("AssignedFollowerDBID", indexes);
+            packet.ReadTime("CreationTime", indexes);
+            packet.ReadInt32("ShipmentDuration", indexes);
+            packet.ReadInt32("BuildingType", indexes);
+        }
+
+        public static void ReadGarrisonMissionReward(Packet packet, params object[] indexes)
+        {
+            packet.ReadInt32<ItemId>("ItemId", indexes);
+            packet.ReadUInt32("Quantity", indexes);
+            packet.ReadInt32<CurrencyId>("CurrencyId", indexes);
+            packet.ReadUInt32("CurrencyQuantity", indexes);
+            packet.ReadUInt32("FollowerXp", indexes);
+            packet.ReadUInt32("BonusAbilityId", indexes);
+            packet.ReadInt32("ItemFileDataID", indexes);
+        }
+
+        public static void ReadGarrisonFollowerCategoryInfo(Packet packet, params object[] indexes)
+        {
+            packet.ReadUInt32("GarrClassSpecId", indexes);
+            packet.ReadUInt32("GarrClassSpecPlayerCondId", indexes);
         }
 
         [Parser(Opcode.SMSG_DISPLAY_TOAST)]
@@ -127,9 +154,9 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
 
             for (int i = 0; i < garrisonCount; i++)
             {
-                packet.ReadInt32("GarrTypeID", i);
-                packet.ReadInt32("GarrSiteID", i);
-                packet.ReadInt32("GarrSiteLevelID", i);
+                packet.ReadInt32E<GarrisonType>("GarrTypeID", i);
+                packet.ReadInt32E<GarrisonSite>("GarrSiteID", i);
+                packet.ReadInt32E<GarrisonSiteLevel>("GarrSiteLevelID", i);
 
                 var garrisonBuildingInfoCount = packet.ReadUInt32("GarrisonBuildingInfoCount", i);
                 var garrisonPlotInfoCount = packet.ReadUInt32("GarrisonPlotInfoCount", i);
@@ -191,6 +218,141 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
                     for (int j = 0; j < garrisonFollowerCount; j++)
                         ReadGarrisonFollower(packet, "Follower", i, j);
             }
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_REQUEST_BLUEPRINT_AND_SPECIALIZATION_DATA_RESULT)]
+        public static void HandleGarrisonRequestBlueprintAndSpecializationDataResult(Packet packet)
+        {
+            packet.ReadInt32E<GarrisonType>("GarrTypeID");
+            var int8 = packet.ReadInt32("SpecializationsKnownCount");
+            var int4 = packet.ReadInt32("BlueprintsKnownCount");
+
+            for (var i = 0; i < int8; i++)
+                packet.ReadInt32("SpecializationsKnown", i);
+
+            for (var i = 0; i < int4; i++)
+                packet.ReadInt32("BlueprintsKnown", i);
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_ADD_FOLLOWER_RESULT)]
+        public static void HandleGarrisonAddFollowerResult(Packet packet)
+        {
+            packet.ReadInt32E<GarrisonType>("GarrTypeID");
+            packet.ReadInt32E<GarrisonResult>("Result");
+            ReadGarrisonFollower(packet);
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_LEARN_BLUEPRINT_RESULT)]
+        public static void HandleGarrisonLearnBlueprintResult(Packet packet)
+        {
+            packet.ReadInt32E<GarrisonType>("GarrTypeID");
+            packet.ReadInt32E<GarrisonResult>("Result");
+            packet.ReadInt32("BuildingID");
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_PLACE_BUILDING_RESULT)]
+        public static void HandleGarrisonPlaceBuildingResult(Packet packet)
+        {
+            packet.ReadInt32E<GarrisonType>("GarrTypeID");
+            packet.ReadInt32E<GarrisonResult>("Result");
+            ReadGarrisonBuildingInfo(packet, "BuildingInfo");
+
+            packet.ResetBitReader();
+
+            packet.ReadBit("PlayActivationCinematic");
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_START_MISSION_RESULT)]
+        public static void HandleGarrisonStartMissionResult(Packet packet)
+        {
+            packet.ReadInt32E<MissionResultType>("Result");
+            packet.ReadInt16("SessionMissionCount");
+            ReadGarrisonMission(packet, "Mission");
+
+            var followerCount = packet.ReadInt32("FollowerCount");
+            for (int i = 0; i < followerCount; i++)
+                packet.ReadInt64("FollowerDBIDs", i);
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_FOLLOWER_CHANGED_XP)]
+        public static void HandleGarrisonFollowerChangedXp(Packet packet)
+        {
+            packet.ReadUInt32("XPEarned");
+            packet.ReadUInt32("XPSource");
+            ReadGarrisonFollower(packet, "FollowerBefore");
+            ReadGarrisonFollower(packet, "FollowerAfter");
+        }
+
+        [Parser(Opcode.CMSG_OPEN_MISSION_NPC)]
+        public static void HandleGarrisonNpcGUID(Packet packet)
+        {
+            packet.ReadPackedGuid128("NpcGUID");
+            packet.ReadInt32E<GarrisonFollowerType>("FollowerType"); // Indicates which type of missions
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_OPEN_MISSION_NPC)]
+        public static void HandleGarrisonOpenMissionNpc(Packet packet)
+        {
+            packet.ReadPackedGuid128("NpcGuid");
+            packet.ReadUInt32E<GarrisonFollowerType>("FollowerType"); // Indicates which type of missions
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_LANDING_PAGE_SHIPMENT_INFO)]
+        public static void HandleGarrisonLandingPageShipmentInfo(Packet packet)
+        {
+            packet.ReadUInt32("UnkUInt32");
+            uint shipmentsCount = packet.ReadUInt32("ShipmentsCount");
+            for (uint i = 0; i < shipmentsCount; i++)
+                ReadGarrisonShipment(packet, "Shipment", i);
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_MISSION_BONUS_ROLL_RESULT)]
+        public static void HandleGarrisonMissionBonusRollResult(Packet packet)
+        {
+            ReadGarrisonMission(packet, "Mission");
+            packet.ReadUInt32("MissionRecID");
+            packet.ReadUInt32E<MissionResultType>("Result");
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_COMPLETE_MISSION_RESULT)]
+        public static void HandleGarrisonFinishMission(Packet packet)
+        {
+            packet.ReadUInt32E<MissionResultType>("Result");
+            ReadGarrisonMission(packet, "Mission");
+            packet.ReadUInt32("MissionRecId");
+
+            if (ClientVersion.AddedInVersion(ClientVersionBuild.V7_2_0_24015)) // even earlier?
+            {
+                uint count = packet.ReadUInt32("MissionFollowerCount");
+                for (uint i = 0; i < count; i++)
+                {
+                    packet.ReadUInt64("FollowerDBID", i);
+                    packet.ReadUInt32("UnkUint32", i); // MissionCompleteState ?
+                }
+                packet.ReadBit("Succeeded");
+            }
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_MISSION_UPDATE_CAN_START)]
+        public static void HandleGarrisonMissionUpdateCanStart(Packet packet)
+        {
+            uint missionsCount = packet.ReadUInt32("MissionsCount");
+            uint canStartMissionCount = packet.ReadUInt32("CanStartMissionCount");
+
+            for (uint i = 0; i < missionsCount; i++)
+                packet.ReadUInt32("MissionRecID", i);
+
+            for (uint i = 0; i < canStartMissionCount; i++)
+                packet.ReadBit("CanStartMission", i);
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_FOLLOWER_CATEGORIES)]
+        public static void HandleGarrisonFollowerCategories(Packet packet)
+        {
+            packet.ReadUInt32E<GarrisonFollowerType>("FollowerTypeId");
+            uint count = packet.ReadUInt32("CategoryInfoCount");
+            for (uint i = 0; i < count; i++)
+                ReadGarrisonFollowerCategoryInfo(packet, "FollowerCategoryInfo", i);
         }
     }
 }
