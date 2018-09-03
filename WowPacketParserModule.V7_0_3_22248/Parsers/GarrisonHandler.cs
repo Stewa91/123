@@ -25,15 +25,7 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
         {
             var missionRewardCount = packet.ReadInt32("MissionRewardCount", indexes);
             for (int i = 0; i < missionRewardCount; i++)
-            {
-                packet.ReadInt32<ItemId>("ItemID", indexes, i);
-                packet.ReadUInt32("Quantity", indexes, i);
-                packet.ReadInt32("CurrencyID", indexes, i);
-                packet.ReadUInt32("CurrencyQuantity", indexes, i);
-                packet.ReadUInt32("FollowerXP", indexes, i);
-                packet.ReadUInt32("BonusAbilityID", indexes, i);
-                packet.ReadInt32("ItemFileDataID", indexes, i);
-            }
+                ReadGarrisonMissionReward(packet, indexes, i);
         }
 
         public static void ReadGarrisonBuildingInfo(Packet packet, params object[] indexes)
@@ -353,6 +345,28 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
             uint count = packet.ReadUInt32("CategoryInfoCount");
             for (uint i = 0; i < count; i++)
                 ReadGarrisonFollowerCategoryInfo(packet, "FollowerCategoryInfo", i);
+        }
+
+        [Parser(Opcode.SMSG_GARRISON_ADD_MISSION_RESULT)]
+        public static void HandleGarrisonAddMissionResult(Packet packet)
+        {
+            packet.ReadUInt32E<GarrisonType>("GarrTypeId");
+            packet.ReadUInt32E<GarrisonResult>("Result");
+            packet.ReadByte("UnkByte");
+
+            ReadGarrisonMission(packet, "Mission");
+
+            uint rewardCount1 = packet.ReadUInt32("RewardsCount");
+            uint rewardCount2 = packet.ReadUInt32("OvermaxRewardsCount");
+
+            for (int i = 0; i < rewardCount1; i++)
+                ReadGarrisonMissionReward(packet, "MissionReward", i);
+
+            for (int i = 0; i < rewardCount2; i++)
+                ReadGarrisonMissionReward(packet, "MissionOvermaxReward", i);
+
+            packet.ResetBitReader();
+            packet.ReadBit("CanStart");
         }
     }
 }
