@@ -368,5 +368,11 @@ namespace WowPacketParserModule.V7_0_3_22248.Parsers
             packet.ResetBitReader();
             packet.ReadBit("CanStart");
         }
+
+        [Parser(Opcode.CMSG_ADVENTURE_JOURNAL_START_QUEST)]
+        public static void HandleAdventurejournalStartQuest(Packet packet)
+        {
+            packet.ReadInt32<QuestId>("QuestID");
+        }
     }
 }
